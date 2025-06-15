@@ -1,12 +1,14 @@
 import pygame 
 import os
 from recursos.utils import limpar_tela, aguarde
+import tkinter as tk
 
 pygame.init()
 
 #tela
 tamanho = (1000,700)
 tela = pygame.display.set_mode( tamanho ) 
+relogio = pygame.time.Clock()
 pygame.display.set_caption("Junk Attack")
 icone  = pygame.image.load("recursos/icone.png")
 pygame.display.set_icon(icone)
@@ -55,9 +57,37 @@ audioEngordar = pygame.mixer.Sound("recursos/audioEngordar.mp3")
 branco = (255,255,255)
 preto = (0, 0 ,0 )
 bege= (71,51,34)
+amarelo = (238,177,94) 
 #fontes
 fonteBotao= pygame.font.Font("recursos/BebasNeue.ttf", 20)
 fonteTitulo= pygame.font.Font("recursos/BebasNeue.ttf", 60)
 fonteGiz = pygame.font.Font("recursos/giz.otf", 20)
 fonteGizMaior = pygame.font.Font("recursos/giz.otf", 40)
 pygame.mixer.music.load("recursos/trilhaSonora.mp3")
+
+def start():
+        tela.fill(branco)
+        tela.blit(fundoStart, (0,0) )
+        tela.blit(personagemInicio, (500, 200) )
+        tela.blit(logoMercado,(780, 0))
+
+        #botões start/quit
+
+        pygame.display.update()
+        relogio.tick(60)
+
+def instrucoes():
+        tela.fill(branco)
+        tela.blit(jornal, (0,0) )
+
+
+def jogo():
+        tela.fill(branco)
+        tela.blit(fundoJogo, (0,0) )
+
+
+def dead():
+    tela.fill(branco)
+    tela.blit(jornal, (0,0) )
+
+start()
