@@ -74,7 +74,7 @@ def start():
     alturaButtonStart  = 50
     larguraButtonQuit = 150
     alturaButtonQuit  = 50
-    xCentro = 175 + 150 // 2  # centro do botão original
+    xCentro = 175 + 150 // 2  
     yCentroStart = 335 + 50 // 2
     yCentroQuit = 400 + 50 // 2
     posicaoXAviao = 1000
@@ -98,6 +98,7 @@ def start():
             elif evento.type == pygame.MOUSEBUTTONUP:
                 if startButton.collidepoint(evento.pos):
                     pygame.mixer.Sound.play(audioBotao)
+                    pygame.mixer.Sound.play(audioPorta) #cortar audio e arrumar sincronia
                     larguraButtonStart = 150
                     alturaButtonStart  = 50
                     instrucoes()
@@ -131,15 +132,109 @@ def start():
         relogio.tick(60)
 
 def instrucoes():
+    larguraButtonStart = 150
+    alturaButtonStart  = 50
+    larguraButtonQuit = 150
+    alturaButtonQuit  = 50
+    xCentro = 175 + 150 // 2  
+    yCentroStart = 335 + 50 // 2
+    yCentroQuit = 400 + 50 // 2
+
+    while True:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                quit()
+                
+            elif evento.type == pygame.MOUSEBUTTONDOWN:
+                if startButton.collidepoint(evento.pos):
+                    larguraButtonStart = 140
+                    alturaButtonStart  = 45
+                if quitButton.collidepoint(evento.pos):
+                    larguraButtonQuit = 140
+                    alturaButtonQuit  = 45
+
+            elif evento.type == pygame.MOUSEBUTTONUP:
+                if startButton.collidepoint(evento.pos):
+                    pygame.mixer.Sound.play(audioBotao)
+                    larguraButtonStart = 150
+                    alturaButtonStart  = 50
+                    jogo()
+                if quitButton.collidepoint(evento.pos):
+                    pygame.mixer.Sound.play(audioBotao)
+                    larguraButtonQuit = 150
+                    alturaButtonQuit  = 50
+                    aguarde(0.2)
+                    start()
+
         tela.fill(branco)
         tela.blit(jornal, (0,0) )
+
+        startButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonStart // 2,yCentroStart - alturaButtonStart // 2, larguraButtonStart, alturaButtonStart), border_radius=15)
+        startTexto = fonteBotao.render("Continuar", True, preto)
+        rectTexto = startTexto.get_rect(center=startButton.center)
+        tela.blit(startTexto, rectTexto)
+        
+        quitButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonQuit // 2,  yCentroQuit - alturaButtonQuit // 2, larguraButtonQuit, alturaButtonQuit), border_radius=15)
+        quitTexto = fonteBotao.render("Voltar", True, preto)
+        rectTextoQuit = quitTexto.get_rect(center=quitButton.center)
+        tela.blit(quitTexto, rectTextoQuit)
+        
+        pygame.display.update()
+        relogio.tick(60)
 
 def jogo():
         tela.fill(branco)
         tela.blit(fundoJogo, (0,0) )
 
 def dead():
-    tela.fill(branco)
-    tela.blit(jornal, (0,0) )
+    larguraButtonStart = 150
+    alturaButtonStart  = 50
+    larguraButtonQuit = 150
+    alturaButtonQuit  = 50
+    xCentro = 175 + 150 // 2  
+    yCentroStart = 335 + 50 // 2
+    yCentroQuit = 400 + 50 // 2
+
+    while True:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                quit()
+                
+            elif evento.type == pygame.MOUSEBUTTONDOWN:
+                if startButton.collidepoint(evento.pos):
+                    larguraButtonStart = 140
+                    alturaButtonStart  = 45
+                if quitButton.collidepoint(evento.pos):
+                    larguraButtonQuit = 140
+                    alturaButtonQuit  = 45
+
+            elif evento.type == pygame.MOUSEBUTTONUP:
+                if startButton.collidepoint(evento.pos):
+                    pygame.mixer.Sound.play(audioBotao)
+                    larguraButtonStart = 150
+                    alturaButtonStart  = 50
+                    start()
+                if quitButton.collidepoint(evento.pos):
+                    pygame.mixer.Sound.play(audioBotao)
+                    larguraButtonQuit = 150
+                    alturaButtonQuit  = 50
+                    aguarde(0.2)
+                    quit()
+
+        tela.fill(branco)
+        tela.blit(jornal, (0,0) )
+
+        startButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonStart // 2,yCentroStart - alturaButtonStart // 2, larguraButtonStart, alturaButtonStart), border_radius=15)
+        startTexto = fonteBotao.render("Jogar novamente", True, preto)
+        rectTexto = startTexto.get_rect(center=startButton.center)
+        tela.blit(startTexto, rectTexto)
+        
+        quitButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonQuit // 2,  yCentroQuit - alturaButtonQuit // 2, larguraButtonQuit, alturaButtonQuit), border_radius=15)
+        quitTexto = fonteBotao.render("Sair", True, preto)
+        rectTextoQuit = quitTexto.get_rect(center=quitButton.center)
+        tela.blit(quitTexto, rectTextoQuit)
+        
+        pygame.display.update()
+        relogio.tick(60)    
 
 start()
