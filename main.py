@@ -1,6 +1,6 @@
 import pygame 
 import os
-from recursos.utils import limpar_tela, aguarde
+from recursos.utils import limparTela, aguarde
 import tkinter as tk
 
 pygame.init()
@@ -49,10 +49,12 @@ pizza = pygame.image.load("recursos/pizza.png")
 refrigerante = pygame.image.load("recursos/refrigerante.png")
 sorvete = pygame.image.load("recursos/sorvete.png")
 #sons
-trilhaSonora = pygame.mixer.Sound("recursos/trilhaSonora.mp3")
+trilhaSonora = pygame.mixer.music.load("recursos/trilhaSonora.mp3")
+pygame.mixer.music.set_volume(0.7) 
 audioPorta = pygame.mixer.Sound("recursos/audioPorta.mp3")
 audioComer = pygame.mixer.Sound("recursos/audioComer.mp3")
-audioEngordar = pygame.mixer.Sound("recursos/audioEngordar.mp3")
+audioEngordar = pygame.mixer.Sound("recursos/audioEngordar.mp3")  
+audioBotao = pygame.mixer.Sound("recursos/audioBotao.mp3")
 #cores
 branco = (255,255,255)
 preto = (0, 0 ,0 )
@@ -66,13 +68,65 @@ fonteGizMaior = pygame.font.Font("recursos/giz.otf", 40)
 pygame.mixer.music.load("recursos/trilhaSonora.mp3")
 
 def start():
+    pygame.mixer.music.set_volume(0.05)
+    pygame.mixer.music.play(-1)
+    larguraButtonStart = 150
+    alturaButtonStart  = 50
+    larguraButtonQuit = 150
+    alturaButtonQuit  = 50
+    xCentro = 175 + 150 // 2  # centro do botão original
+    yCentroStart = 335 + 50 // 2
+    yCentroQuit = 400 + 50 // 2
+    posicaoXAviao = 1000
+    posicaoYAviao = 120
+    velocidadeAviao =30
+
+
+    while True:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                quit()
+                
+            elif evento.type == pygame.MOUSEBUTTONDOWN:
+                if startButton.collidepoint(evento.pos):
+                    larguraButtonStart = 140
+                    alturaButtonStart  = 45
+                if quitButton.collidepoint(evento.pos):
+                    larguraButtonQuit = 140
+                    alturaButtonQuit  = 45
+
+            elif evento.type == pygame.MOUSEBUTTONUP:
+                if startButton.collidepoint(evento.pos):
+                    pygame.mixer.Sound.play(audioBotao)
+                    larguraButtonStart = 150
+                    alturaButtonStart  = 50
+                    instrucoes()
+                if quitButton.collidepoint(evento.pos):
+                    pygame.mixer.Sound.play(audioBotao)
+                    larguraButtonQuit = 150
+                    alturaButtonQuit  = 50
+                    aguarde(0.2)
+                    quit()
+                        
         tela.fill(branco)
         tela.blit(fundoStart, (0,0) )
         tela.blit(personagemInicio, (500, 200) )
         tela.blit(logoMercado,(780, 0))
-
-        #botões start/quit
-
+        tela.blit(aviao, (posicaoXAviao, posicaoYAviao))
+        if posicaoXAviao > -1120:
+            posicaoXAviao = posicaoXAviao - 16
+            posicaoYAviao = posicaoYAviao -1
+        
+        startButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonStart // 2,yCentroStart - alturaButtonStart // 2, larguraButtonStart, alturaButtonStart), border_radius=15)
+        startTexto = fonteBotao.render("Iniciar", True, preto)
+        rectTexto = startTexto.get_rect(center=startButton.center)
+        tela.blit(startTexto, rectTexto)
+        
+        quitButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonQuit // 2,  yCentroQuit - alturaButtonQuit // 2, larguraButtonQuit, alturaButtonQuit), border_radius=15)
+        quitTexto = fonteBotao.render("Sair", True, preto)
+        rectTextoQuit = quitTexto.get_rect(center=quitButton.center)
+        tela.blit(quitTexto, rectTextoQuit)
+        
         pygame.display.update()
         relogio.tick(60)
 
@@ -80,11 +134,9 @@ def instrucoes():
         tela.fill(branco)
         tela.blit(jornal, (0,0) )
 
-
 def jogo():
         tela.fill(branco)
         tela.blit(fundoJogo, (0,0) )
-
 
 def dead():
     tela.fill(branco)

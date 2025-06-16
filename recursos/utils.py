@@ -2,7 +2,7 @@ import os
 import time
 
 
-def limpar_tela():
+def limparTela():
     os.system("cls")
     
 def aguarde(segundos):
