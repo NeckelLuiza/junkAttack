@@ -82,7 +82,6 @@ def start():
     posicaoYAviao = 120
     velocidadeAviao =30
 
-
     while True:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
@@ -99,7 +98,7 @@ def start():
             elif evento.type == pygame.MOUSEBUTTONUP:
                 if startButton.collidepoint(evento.pos):
                     pygame.mixer.Sound.play(audioBotao)
-                    pygame.mixer.Sound.play(audioPorta) #cortar audio e arrumar sincronia
+                    pygame.mixer.Sound.play(audioPorta) 
                     larguraButtonStart = 150
                     alturaButtonStart  = 50
                     instrucoes()
@@ -191,26 +190,30 @@ def jogo():
     velocidadeComida = 1
     pontos = 0
     vidas = 3
+    boca_x = posicaoXpersonagem + 110  # deslocamento horizontal (ajuste conforme seu sprite)
+    boca_y = posicaoYpersonagem + 40   # deslocamento vertical
+    hitbox_boca = pygame.Rect(boca_x, boca_y, 30, 20)
 
     class Comida:
         def __init__(self, imagem):
             self.imagem = imagem
             self.x = random.randint(50, 800)
             self.y = -random.randint(50, 300)
-            self.velocidade = random.uniform(0.5, 1.5)
+            self.velocidade = random.uniform(0.5, 1.2)
 
         def atualizar(self):
             self.y += self.velocidade
             if self.y > 700:
                 self.y = -random.randint(100, 300)
                 self.x = random.randint(50, 800)
-                self.velocidade = random.uniform(0.5, 1.5)
+                self.velocidade = random.uniform(0.5, 1.2)
 
         def desenhar(self, superficie):
             superficie.blit(self.imagem, (self.x, self.y))
 
     imagens_comida = [banana, batataFrita, chocolate, hamburguer, laranja, maca, melancia, morango, ovos, pizza, refrigerante, sorvete]
-    comidas = [Comida(imagem) for imagem in imagens_comida]
+    comidas = [Comida(random.choice(imagens_comida)) for _ in range(6)]
+    saudaveis = [banana, laranja, maca, melancia, morango, ovos]
 
     personagem_atual = personagemMagro
     personagemFrente = personagemMagro
@@ -229,27 +232,10 @@ def jogo():
                 elif evento.key == pygame.K_LEFT:
                     movimentopersonagem = -3
                     personagem_atual = esquerda_img
-
             elif evento.type == pygame.KEYUP:
                 if evento.key == pygame.K_RIGHT or evento.key == pygame.K_LEFT:
                     movimentopersonagem = 0
                     personagem_atual = personagemFrente
-                
-            if vidas == 3:
-                personagemFrente = personagemMagro
-                personagemComendo = magroComendo
-                esquerda_img = magroEsquerda
-                direita_img = magroDireita
-            elif vidas == 2:
-                personagemFrente = personagemCheio
-                personagemComendo = cheioComendo
-                esquerda_img = cheioEsquerda
-                direita_img = cheioDireita
-            elif vidas == 1:
-                personagemFrente = personagemGordo
-                personagemComendo = gordoComendo
-                esquerda_img = gordoEsquerda
-                direita_img = gordoDireita
                 
         posicaoXpersonagem = posicaoXpersonagem + movimentopersonagem 
 
@@ -266,13 +252,50 @@ def jogo():
         tela.blit(fonteGizMaior.render(str(numeroPontos), True, branco), (740, 200))
         tela.blit(logoMercadoRed,(0, 0))
         tela.blit(personagem_atual, (posicaoXpersonagem, posicaoYpersonagem))
-        vida1= tela.blit(coracao, (820, 0))
-        vida2= tela.blit(coracao, (850, 0))
-        vida3= tela.blit(coracao, (880, 0))
-
+        boca_x = posicaoXpersonagem + 100   
+        boca_y = posicaoYpersonagem + 110
+        hitbox_boca = pygame.Rect(boca_x, boca_y, 60, 40)
+    
         for comida in comidas:
             comida.atualizar()
             comida.desenhar(tela)
+
+            comida_rect = pygame.Rect(comida.x, comida.y, comida.imagem.get_width(), comida.imagem.get_height())
+
+            if hitbox_boca.colliderect(comida_rect):
+                personagem_atual = personagemComendo
+                if comida.imagem in saudaveis:
+                    pontos += 1
+                    audioComer.play()
+                else:
+                    vidas -= 1
+                    audioEngordar.play()
+                    if vidas == 3:
+                        personagemFrente = personagemMagro
+                        personagemComendo = magroComendo
+                        esquerda_img = magroEsquerda
+                        direita_img = magroDireita
+                        tela.blit(coracao, (880, 0))
+                    elif vidas >= 2:
+                        personagemFrente = personagemCheio
+                        personagemComendo = cheioComendo
+                        esquerda_img = cheioEsquerda
+                        direita_img = cheioDireita
+                        tela.blit(coracao, (850, 0))
+                    elif vidas >= 1:
+                        personagemFrente = personagemGordo
+                        personagemComendo = gordoComendo
+                        esquerda_img = gordoEsquerda
+                        direita_img = gordoDireita
+                        tela.blit(coracao, (820, 0))
+                    else:
+                        personagem_atual = personagemFinal
+                        aguarde(2)
+                        dead()
+
+                comida.y = -random.randint(100, 300)
+                comida.x = random.randint(50, 800)
+           
 
         pygame.display.update()
 
