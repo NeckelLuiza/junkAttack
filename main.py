@@ -2,6 +2,7 @@ import pygame
 import os
 from recursos.utils import limparTela, aguarde
 import tkinter as tk
+import random
 
 pygame.init()
 
@@ -183,8 +184,97 @@ def instrucoes():
         relogio.tick(60)
 
 def jogo():
+    posicaoXpersonagem = 300
+    posicaoYpersonagem = 400
+    movimentopersonagem  = 0
+    posicaoComida = -240
+    velocidadeComida = 1
+    pontos = 0
+    vidas = 3
+
+    class Comida:
+        def __init__(self, imagem):
+            self.imagem = imagem
+            self.x = random.randint(50, 800)
+            self.y = -random.randint(50, 300)
+            self.velocidade = random.uniform(0.5, 1.5)
+
+        def atualizar(self):
+            self.y += self.velocidade
+            if self.y > 700:
+                self.y = -random.randint(100, 300)
+                self.x = random.randint(50, 800)
+                self.velocidade = random.uniform(0.5, 1.5)
+
+        def desenhar(self, superficie):
+            superficie.blit(self.imagem, (self.x, self.y))
+
+    imagens_comida = [banana, batataFrita, chocolate, hamburguer, laranja, maca, melancia, morango, ovos, pizza, refrigerante, sorvete]
+    comidas = [Comida(imagem) for imagem in imagens_comida]
+
+    personagem_atual = personagemMagro
+    personagemFrente = personagemMagro
+    personagemComendo = magroComendo
+    esquerda_img = magroEsquerda
+    direita_img = magroDireita
+
+    while True:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                quit()
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_RIGHT:
+                    movimentopersonagem = 3
+                    personagem_atual = direita_img
+                elif evento.key == pygame.K_LEFT:
+                    movimentopersonagem = -3
+                    personagem_atual = esquerda_img
+
+            elif evento.type == pygame.KEYUP:
+                if evento.key == pygame.K_RIGHT or evento.key == pygame.K_LEFT:
+                    movimentopersonagem = 0
+                    personagem_atual = personagemFrente
+                
+            if vidas == 3:
+                personagemFrente = personagemMagro
+                personagemComendo = magroComendo
+                esquerda_img = magroEsquerda
+                direita_img = magroDireita
+            elif vidas == 2:
+                personagemFrente = personagemCheio
+                personagemComendo = cheioComendo
+                esquerda_img = cheioEsquerda
+                direita_img = cheioDireita
+            elif vidas == 1:
+                personagemFrente = personagemGordo
+                personagemComendo = gordoComendo
+                esquerda_img = gordoEsquerda
+                direita_img = gordoDireita
+                
+        posicaoXpersonagem = posicaoXpersonagem + movimentopersonagem 
+
+        if posicaoXpersonagem < 0 :
+            posicaoXpersonagem = 15
+        elif posicaoXpersonagem >720:
+            posicaoXpersonagem = 705
+        
+        ponto= fonteGiz.render("Pontos", True, branco)
+        numeroPontos= pontos
         tela.fill(branco)
         tela.blit(fundoJogo, (0,0) )
+        tela.blit(ponto, (710, 175))
+        tela.blit(fonteGizMaior.render(str(numeroPontos), True, branco), (740, 200))
+        tela.blit(logoMercadoRed,(0, 0))
+        tela.blit(personagem_atual, (posicaoXpersonagem, posicaoYpersonagem))
+        vida1= tela.blit(coracao, (820, 0))
+        vida2= tela.blit(coracao, (850, 0))
+        vida3= tela.blit(coracao, (880, 0))
+
+        for comida in comidas:
+            comida.atualizar()
+            comida.desenhar(tela)
+
+        pygame.display.update()
 
 def dead():
     larguraButtonStart = 150
