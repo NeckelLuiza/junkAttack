@@ -186,13 +186,12 @@ def jogo():
     posicaoXpersonagem = 300
     posicaoYpersonagem = 400
     movimentopersonagem  = 0
-    posicaoComida = -240
-    velocidadeComida = 1
     pontos = 0
     vidas = 3
-    boca_x = posicaoXpersonagem + 110  # deslocamento horizontal (ajuste conforme seu sprite)
-    boca_y = posicaoYpersonagem + 40   # deslocamento vertical
-    hitbox_boca = pygame.Rect(boca_x, boca_y, 30, 20)
+    vidas_antes = 3
+    invulneravel = False
+    tempo_invulneravel = 0
+    duracao_invulneravel = 1000
 
     class Comida:
         def __init__(self, imagem):
@@ -212,8 +211,12 @@ def jogo():
             superficie.blit(self.imagem, (self.x, self.y))
 
     imagens_comida = [banana, batataFrita, chocolate, hamburguer, laranja, maca, melancia, morango, ovos, pizza, refrigerante, sorvete]
-    comidas = [Comida(random.choice(imagens_comida)) for _ in range(6)]
-    saudaveis = [banana, laranja, maca, melancia, morango, ovos]
+    saudaveis = [banana, laranja, maca, melancia, morango]
+    nao_saudaveis = [batataFrita, chocolate, hamburguer, ovos, pizza, refrigerante, sorvete]
+    comidas_saudaveis = [Comida(random.choice(saudaveis)) for _ in range(3)]
+    comidas_nao_saudaveis = [Comida(random.choice(nao_saudaveis)) for _ in range(3)]
+    comidas = comidas_saudaveis + comidas_nao_saudaveis
+    random.shuffle(comidas)
 
     personagem_atual = personagemMagro
     personagemFrente = personagemMagro
@@ -222,6 +225,8 @@ def jogo():
     direita_img = magroDireita
 
     while True:
+        tempo_atual = pygame.time.get_ticks()
+
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 quit()
@@ -236,66 +241,138 @@ def jogo():
                 if evento.key == pygame.K_RIGHT or evento.key == pygame.K_LEFT:
                     movimentopersonagem = 0
                     personagem_atual = personagemFrente
-                
-        posicaoXpersonagem = posicaoXpersonagem + movimentopersonagem 
 
-        if posicaoXpersonagem < 0 :
-            posicaoXpersonagem = 15
-        elif posicaoXpersonagem >720:
-            posicaoXpersonagem = 705
-        
-        ponto= fonteGiz.render("Pontos", True, branco)
-        numeroPontos= pontos
-        tela.fill(branco)
-        tela.blit(fundoJogo, (0,0) )
-        tela.blit(ponto, (710, 175))
-        tela.blit(fonteGizMaior.render(str(numeroPontos), True, branco), (740, 200))
-        tela.blit(logoMercadoRed,(0, 0))
-        tela.blit(personagem_atual, (posicaoXpersonagem, posicaoYpersonagem))
-        boca_x = posicaoXpersonagem + 100   
+        posicaoXpersonagem += movimentopersonagem
+        posicaoXpersonagem = max(15, min(posicaoXpersonagem, 705))
+        boca_x = posicaoXpersonagem + 100
         boca_y = posicaoYpersonagem + 110
         hitbox_boca = pygame.Rect(boca_x, boca_y, 60, 40)
-    
+
+        if invulneravel and tempo_atual - tempo_invulneravel > duracao_invulneravel:
+            invulneravel = False
+
         for comida in comidas:
             comida.atualizar()
-            comida.desenhar(tela)
 
+        for comida in comidas:
             comida_rect = pygame.Rect(comida.x, comida.y, comida.imagem.get_width(), comida.imagem.get_height())
-
-            if hitbox_boca.colliderect(comida_rect):
-                personagem_atual = personagemComendo
+            if hitbox_boca.colliderect(comida_rect) and not invulneravel:
                 if comida.imagem in saudaveis:
                     pontos += 1
                     audioComer.play()
+
+                    comida.y = -random.randint(100, 300)
+                    comida.x = random.randint(50, 800)
+                    comida.imagem = random.choice(imagens_comida)
+
+                    personagem_atual = personagemComendo
+                    tela.fill(branco)
+                    tela.blit(fundoJogo, (0, 0))
+                    tela.blit(logoMercadoRed, (0, 0))
+                    ponto = fonteGiz.render("Pontos", True, branco)
+                    tela.blit(ponto, (710, 175))
+                    tela.blit(fonteGizMaior.render(str(pontos), True, branco), (740, 200))
+                    if vidas == 3:
+                        tela.blit(coracao, (820, 0))
+                    if vidas >= 2:
+                        tela.blit(coracao, (850, 0))
+                    if vidas >= 1:
+                        tela.blit(coracao, (880, 0))
+                    for c in comidas:
+                        c.desenhar(tela)
+                    tela.blit(personagem_atual, (posicaoXpersonagem, posicaoYpersonagem))
+                    pygame.display.update()
+                    pygame.time.delay(100)
+                    personagem_atual = personagemFrente
+
                 else:
-                    vidas -= 1
+                    vidas_antes = vidas
                     audioEngordar.play()
+                    invulneravel = True
+                    tempo_invulneravel = tempo_atual
+
+                    # Reposiciona a comida antes da animação
+                    comida.y = -random.randint(100, 300)
+                    comida.x = random.randint(50, 800)
+
+                    # Mostra personagem comendo
+                    personagem_atual = personagemComendo
+                    tela.blit(personagem_atual, (posicaoXpersonagem, posicaoYpersonagem))
+                    pygame.display.update()
+                    pygame.time.delay(150)
+
+                    vidas -= 1
+
+                    if vidas == 0:
+                        for i in range(6):
+                            tela.fill(branco)
+                            tela.blit(fundoJogo, (0, 0))
+                            tela.blit(logoMercadoRed, (0, 0))
+                            ponto = fonteGiz.render("Pontos", True, branco)
+                            tela.blit(ponto, (710, 175))
+                            tela.blit(fonteGizMaior.render(str(pontos), True, branco), (740, 200))
+                            if i % 2 == 0:
+                                tela.blit(coracao, (880, 0))
+                            tela.blit(personagemComendo, (posicaoXpersonagem, posicaoYpersonagem))
+                            pygame.display.update()
+                            pygame.time.delay(100)
+
+                        tela.fill(branco)
+                        tela.blit(fundoJogo, (0, 0))
+                        tela.blit(logoMercadoRed, (0, 0))
+                        tela.blit(fonteGiz.render("Pontos", True, branco), (710, 175))
+                        tela.blit(fonteGizMaior.render(str(pontos), True, branco), (740, 200))
+                        tela.blit(personagemFinal, (posicaoXpersonagem, posicaoYpersonagem))
+                        pygame.display.update()
+                        pygame.time.delay(3000)
+                        dead()
+                        return
+
                     if vidas == 3:
                         personagemFrente = personagemMagro
                         personagemComendo = magroComendo
                         esquerda_img = magroEsquerda
                         direita_img = magroDireita
-                        tela.blit(coracao, (880, 0))
-                    elif vidas >= 2:
+                    elif vidas == 2:
                         personagemFrente = personagemCheio
                         personagemComendo = cheioComendo
                         esquerda_img = cheioEsquerda
                         direita_img = cheioDireita
-                        tela.blit(coracao, (850, 0))
-                    elif vidas >= 1:
+                    elif vidas == 1:
                         personagemFrente = personagemGordo
                         personagemComendo = gordoComendo
                         esquerda_img = gordoEsquerda
                         direita_img = gordoDireita
-                        tela.blit(coracao, (820, 0))
-                    else:
-                        personagem_atual = personagemFinal
-                        aguarde(2)
-                        dead()
 
-                comida.y = -random.randint(100, 300)
-                comida.x = random.randint(50, 800)
-           
+        mostrar_personagem = not (invulneravel and (tempo_atual // 100) % 2 == 1)
+
+        tela.fill(branco)
+        tela.blit(fundoJogo, (0, 0))
+        tela.blit(logoMercadoRed, (0, 0))
+        ponto = fonteGiz.render("Pontos", True, branco)
+        tela.blit(ponto, (710, 175))
+        tela.blit(fonteGizMaior.render(str(pontos), True, branco), (740, 200))
+
+        if invulneravel and (tempo_atual // 100) % 2 == 0:
+            if vidas_antes == 3:
+                tela.blit(coracao, (820, 0))
+            if vidas_antes >= 2:
+                tela.blit(coracao, (850, 0))
+            if vidas_antes >= 1:
+                tela.blit(coracao, (880, 0))
+        else:
+            if vidas == 3:
+                tela.blit(coracao, (820, 0))
+            if vidas >= 2:
+                tela.blit(coracao, (850, 0))
+            if vidas >= 1:
+                tela.blit(coracao, (880, 0))
+
+        if mostrar_personagem:
+            tela.blit(personagem_atual, (posicaoXpersonagem, posicaoYpersonagem))
+
+        for comida in comidas:
+            comida.desenhar(tela)
 
         pygame.display.update()
 
