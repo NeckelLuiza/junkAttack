@@ -16,7 +16,8 @@ pygame.display.set_icon(icone)
 #cenário
 fundoStart= pygame.image.load("recursos/fundoStart.png")
 fundoJogo = pygame.image.load("recursos/fundoJogo.png")
-jornal = pygame.image.load("recursos/jornal.png")
+regras = pygame.image.load("recursos/regras.png")
+placar = pygame.image.load("recursos/placar.png")
 logoMercado = pygame.image.load("recursos/logoMercado.png")
 logoMercadoRed = pygame.image.load("recursos/logoMercadoRed.png")
 aviao = pygame.image.load("recursos/aviao.png")
@@ -167,7 +168,8 @@ def instrucoes():
                     start()
 
         tela.fill(branco)
-        tela.blit(jornal, (0,0) )
+        tela.blit(fundoJogo, (0,0) )
+        tela.blit(regras, (0, -10))
 
         startButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonStart // 2,yCentroStart - alturaButtonStart // 2, larguraButtonStart, alturaButtonStart), border_radius=15)
         startTexto = fonteBotao.render("Continuar", True, preto)
@@ -193,6 +195,12 @@ def jogo():
     tempo_invulneravel = 0
     duracao_invulneravel = 1000
 
+    def sortear_comida():
+        if random.random() < 0.6:  
+            return random.choice(saudaveis)
+        else:
+            return random.choice(nao_saudaveis)
+
     class Comida:
         def __init__(self, imagem):
             self.imagem = imagem
@@ -206,11 +214,11 @@ def jogo():
                 self.y = -random.randint(100, 300)
                 self.x = random.randint(50, 800)
                 self.velocidade = random.uniform(0.5, 1.2)
+                self.imagem = sortear_comida()
 
         def desenhar(self, superficie):
             superficie.blit(self.imagem, (self.x, self.y))
 
-    imagens_comida = [banana, batataFrita, chocolate, hamburguer, laranja, maca, melancia, morango, ovos, pizza, refrigerante, sorvete]
     saudaveis = [banana, laranja, maca, melancia, morango]
     nao_saudaveis = [batataFrita, chocolate, hamburguer, ovos, pizza, refrigerante, sorvete]
     comidas_saudaveis = [Comida(random.choice(saudaveis)) for _ in range(3)]
@@ -260,10 +268,9 @@ def jogo():
                 if comida.imagem in saudaveis:
                     pontos += 1
                     audioComer.play()
-
                     comida.y = -random.randint(100, 300)
                     comida.x = random.randint(50, 800)
-                    comida.imagem = random.choice(imagens_comida)
+                    comida.imagem = sortear_comida()
 
                     personagem_atual = personagemComendo
                     tela.fill(branco)
@@ -290,16 +297,32 @@ def jogo():
                     audioEngordar.play()
                     invulneravel = True
                     tempo_invulneravel = tempo_atual
-
-                    # Reposiciona a comida antes da animação
                     comida.y = -random.randint(100, 300)
                     comida.x = random.randint(50, 800)
-
-                    # Mostra personagem comendo
+                    comida.imagem = sortear_comida()
                     personagem_atual = personagemComendo
+
+                    tela.fill(branco)
+                    tela.blit(fundoJogo, (0, 0))
+                    tela.blit(logoMercadoRed, (0, 0))
+                    ponto = fonteGiz.render("Pontos", True, branco)
+                    tela.blit(ponto, (710, 175))
+                    tela.blit(fonteGizMaior.render(str(pontos), True, branco), (740, 200))
+
+                    if vidas == 3:
+                        tela.blit(coracao, (820, 0))
+                    if vidas >= 2:
+                        tela.blit(coracao, (850, 0))
+                    if vidas >= 1:
+                        tela.blit(coracao, (880, 0))
+
+                    for c in comidas:
+                        c.desenhar(tela)
+
                     tela.blit(personagem_atual, (posicaoXpersonagem, posicaoYpersonagem))
                     pygame.display.update()
                     pygame.time.delay(150)
+                    personagem_atual = personagemFrente
 
                     vidas -= 1
 
@@ -412,7 +435,9 @@ def dead():
                     quit()
 
         tela.fill(branco)
-        tela.blit(jornal, (0,0) )
+        tela.blit(fundoStart, (0,0) )
+        tela.blit(placar, (60,-15))
+        tela.blit(personagemFinal, (-30, 300))
 
         startButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonStart // 2,yCentroStart - alturaButtonStart // 2, larguraButtonStart, alturaButtonStart), border_radius=15)
         startTexto = fonteBotao.render("Jogar novamente", True, preto)
