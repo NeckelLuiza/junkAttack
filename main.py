@@ -1,8 +1,9 @@
 import pygame 
 import os
-from recursos.utils import limparTela, aguarde
+from recursos.utils import limparTela, aguarde, ouvir ,inicializarBancoDeDados
 import tkinter as tk
 import random
+from tkinter import messagebox
 
 pygame.init()
 
@@ -22,6 +23,7 @@ logoMercado = pygame.image.load("recursos/logoMercado.png")
 logoMercadoRed = pygame.image.load("recursos/logoMercadoRed.png")
 aviao = pygame.image.load("recursos/aviao.png")
 coracao = pygame.image.load("recursos/coracao.png")
+tecla = pygame.image.load("recursos/tecla.png")
 #personagem
 personagemInicio= pygame.image.load("recursos/personagemInicio.png")
 personagemMagro = pygame.image.load("recursos/personagem1.png")
@@ -63,25 +65,76 @@ preto = (0, 0 ,0 )
 bege= (71,51,34)
 amarelo = (238,177,94) 
 #fontes
+fonteBotaoGrande = pygame.font.Font("recursos/BebasNeue.ttf", 40)
 fonteBotao= pygame.font.Font("recursos/BebasNeue.ttf", 20)
-fonteTitulo= pygame.font.Font("recursos/BebasNeue.ttf", 60)
+fonteGizPequeno = pygame.font.Font("recursos/giz.otf", 10)
 fonteGiz = pygame.font.Font("recursos/giz.otf", 20)
+fonteGizMédio = pygame.font.Font("recursos/giz.otf", 25)
 fonteGizMaior = pygame.font.Font("recursos/giz.otf", 40)
 pygame.mixer.music.load("recursos/trilhaSonora.mp3")
 
 def start():
+    def obter_nome():
+        global nome
+        nome = ""
+        enviado = False
+
+        root = tk.Tk()
+        largura_janela = 350
+        altura_janela = 130
+        largura_tela = root.winfo_screenwidth()
+        altura_tela = root.winfo_screenheight()
+        pos_x = (largura_tela - largura_janela) // 2
+        pos_y = (altura_tela - altura_janela) // 2
+        root.geometry(f"{largura_janela}x{altura_janela}+{pos_x}+{pos_y}")
+        root.title("Fale ou digite seu nome")
+
+        label = tk.Label(root, text="Jogador:")
+        label.pack()
+
+        entry_nome = tk.Entry(root)
+        entry_nome.pack(pady=5)
+
+        def ouvir_nome():
+            texto = ouvir()
+            if texto:
+                entry_nome.delete(0, tk.END)
+                entry_nome.insert(0, texto)
+                root.update()
+            else:
+                messagebox.showwarning("Aviso", "Não consegui entender o que você disse.")
+
+        def enviar_nome():
+            nonlocal enviado
+            global nome
+            nome = entry_nome.get()
+            if not nome:
+                messagebox.showwarning("Aviso", "Por favor, diga ou digite seu nome!")
+            else:
+                pygame.mixer.Sound.play(audioPorta)
+                enviado = True
+                root.destroy()
+
+        botao_ouvir = tk.Button(root, text="Falar agora", command=ouvir_nome)
+        botao_ouvir.pack()
+
+        botao_enviar = tk.Button(root, text="Enviar", command=enviar_nome)
+        botao_enviar.pack(pady=5)
+
+        root.mainloop()
+        return enviado  
+
     pygame.mixer.music.set_volume(0.05)
     pygame.mixer.music.play(-1)
-    larguraButtonStart = 150
+    larguraButtonStart = 120
     alturaButtonStart  = 50
-    larguraButtonQuit = 150
+    larguraButtonQuit = 120
     alturaButtonQuit  = 50
-    xCentro = 175 + 150 // 2  
-    yCentroStart = 335 + 50 // 2
+    xCentro = 190 + 120 // 2  
+    yCentroStart = 340 + 50 // 2
     yCentroQuit = 400 + 50 // 2
     posicaoXAviao = 1000
     posicaoYAviao = 120
-    velocidadeAviao =30
 
     while True:
         for evento in pygame.event.get():
@@ -90,19 +143,38 @@ def start():
                 
             elif evento.type == pygame.MOUSEBUTTONDOWN:
                 if startButton.collidepoint(evento.pos):
-                    larguraButtonStart = 140
+                    larguraButtonStart = 110
                     alturaButtonStart  = 45
                 if quitButton.collidepoint(evento.pos):
-                    larguraButtonQuit = 140
+                    larguraButtonQuit = 110
                     alturaButtonQuit  = 45
 
             elif evento.type == pygame.MOUSEBUTTONUP:
                 if startButton.collidepoint(evento.pos):
                     pygame.mixer.Sound.play(audioBotao)
-                    pygame.mixer.Sound.play(audioPorta) 
-                    larguraButtonStart = 150
+                    larguraButtonStart = 120
                     alturaButtonStart  = 50
-                    instrucoes()
+                    tela.fill(branco)
+                    tela.blit(fundoStart, (0,0))
+                    tela.blit(personagemInicio, (500, 200))
+                    tela.blit(logoMercado,(780, 0))
+                    tela.blit(aviao, (posicaoXAviao, posicaoYAviao))
+
+                    startButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonStart // 2, yCentroStart - alturaButtonStart // 2, larguraButtonStart, alturaButtonStart), border_radius=15)
+                    startTexto = fonteBotao.render("Iniciar", True, preto)
+                    rectTexto = startTexto.get_rect(center=startButton.center)
+                    tela.blit(startTexto, rectTexto)
+
+                    quitButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonQuit // 2, yCentroQuit - alturaButtonQuit // 2, larguraButtonQuit, alturaButtonQuit), border_radius=15)
+                    quitTexto = fonteBotao.render("Sair", True, preto)
+                    rectTextoQuit = quitTexto.get_rect(center=quitButton.center)
+                    tela.blit(quitTexto, rectTextoQuit)
+
+                    pygame.display.update()
+                    pygame.time.delay(120)
+                    if obter_nome():
+                        instrucoes()  
+
                 if quitButton.collidepoint(evento.pos):
                     pygame.mixer.Sound.play(audioBotao)
                     larguraButtonQuit = 150
@@ -133,13 +205,14 @@ def start():
         relogio.tick(60)
 
 def instrucoes():
-    larguraButtonStart = 150
+    larguraButtonStart = 80
     alturaButtonStart  = 50
-    larguraButtonQuit = 150
+    larguraButtonQuit = 80
     alturaButtonQuit  = 50
-    xCentro = 175 + 150 // 2  
-    yCentroStart = 335 + 50 // 2
-    yCentroQuit = 400 + 50 // 2
+    xCentroStart = 305 + 80 // 2  
+    xCentroQuit = 190 + 80 // 2
+    yCentroStart = 605 + 50 // 2
+    yCentroQuit = 605 + 50 // 2
 
     while True:
         for evento in pygame.event.get():
@@ -148,21 +221,21 @@ def instrucoes():
                 
             elif evento.type == pygame.MOUSEBUTTONDOWN:
                 if startButton.collidepoint(evento.pos):
-                    larguraButtonStart = 140
+                    larguraButtonStart = 70
                     alturaButtonStart  = 45
                 if quitButton.collidepoint(evento.pos):
-                    larguraButtonQuit = 140
+                    larguraButtonQuit = 70
                     alturaButtonQuit  = 45
 
             elif evento.type == pygame.MOUSEBUTTONUP:
                 if startButton.collidepoint(evento.pos):
                     pygame.mixer.Sound.play(audioBotao)
-                    larguraButtonStart = 150
+                    larguraButtonStart = 80
                     alturaButtonStart  = 50
                     jogo()
                 if quitButton.collidepoint(evento.pos):
                     pygame.mixer.Sound.play(audioBotao)
-                    larguraButtonQuit = 150
+                    larguraButtonQuit = 80
                     alturaButtonQuit  = 50
                     aguarde(0.2)
                     start()
@@ -170,14 +243,18 @@ def instrucoes():
         tela.fill(branco)
         tela.blit(fundoJogo, (0,0) )
         tela.blit(regras, (0, -10))
+        centro_x = 468 + 326 // 2  # 631
+        texto_boas_vindas = fonteGizMédio.render(f"Bem-vindo(a), {nome}!", True, preto)
+        rect_boas_vindas = texto_boas_vindas.get_rect(center=(centro_x, 300))
+        tela.blit(texto_boas_vindas, rect_boas_vindas)
 
-        startButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonStart // 2,yCentroStart - alturaButtonStart // 2, larguraButtonStart, alturaButtonStart), border_radius=15)
-        startTexto = fonteBotao.render("Continuar", True, preto)
+        startButton = pygame.draw.rect(tela, amarelo, (xCentroStart - larguraButtonStart // 2,yCentroStart - alturaButtonStart // 2, larguraButtonStart, alturaButtonStart), border_radius=15)
+        startTexto = fonteBotaoGrande.render(">", True, preto)
         rectTexto = startTexto.get_rect(center=startButton.center)
         tela.blit(startTexto, rectTexto)
         
-        quitButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonQuit // 2,  yCentroQuit - alturaButtonQuit // 2, larguraButtonQuit, alturaButtonQuit), border_radius=15)
-        quitTexto = fonteBotao.render("Voltar", True, preto)
+        quitButton = pygame.draw.rect(tela, amarelo, (xCentroQuit - larguraButtonQuit // 2,  yCentroQuit - alturaButtonQuit // 2, larguraButtonQuit, alturaButtonQuit), border_radius=15)
+        quitTexto = fonteBotaoGrande.render("<", True, preto)
         rectTextoQuit = quitTexto.get_rect(center=quitButton.center)
         tela.blit(quitTexto, rectTextoQuit)
         
@@ -185,6 +262,12 @@ def instrucoes():
         relogio.tick(60)
 
 def jogo():
+    largura_original, altura_original = logoMercadoRed.get_size()
+    escala = 1.0
+    direcao = 1  
+    velocidade = 0.001
+    escala_min = 0.95
+    escala_max = 1.05
     posicaoXpersonagem = 300
     posicaoYpersonagem = 400
     movimentopersonagem  = 0
@@ -232,6 +315,37 @@ def jogo():
     esquerda_img = magroEsquerda
     direita_img = magroDireita
 
+    def pausar_jogo():
+        pausado = True
+        overlay = pygame.Surface((1000, 700))  
+        overlay.set_alpha(180)  
+        overlay.fill((0, 0, 0))  
+
+        texto_pausa = fonteGiz.render("Jogo Pausado - Pressione ESPAÇO para continuar", True, branco)
+        rect_texto = texto_pausa.get_rect(center=(500, 350))
+
+        while pausado:
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    quit()
+                elif evento.type == pygame.KEYDOWN:
+                    if evento.key == pygame.K_SPACE:
+                        pausado = False
+            tela.blit(fundoJogo, (0, 0))
+            tela.blit(logoMercadoRed, (0, 0))
+            tela.blit(ponto, (710, 175))
+            tela.blit(fonteGizMaior.render(str(pontos), True, branco), (740, 200))
+            tela.blit(personagem_atual, (posicaoXpersonagem, posicaoYpersonagem))
+            if vidas == 3:
+                tela.blit(coracao, (820, 0))
+            if vidas >= 2:
+                tela.blit(coracao, (850, 0))
+            if vidas >= 1:
+                tela.blit(coracao, (880, 0))
+            tela.blit(overlay, (0, 0))
+            tela.blit(texto_pausa, rect_texto)
+            pygame.display.update()
+
     while True:
         tempo_atual = pygame.time.get_ticks()
 
@@ -245,6 +359,8 @@ def jogo():
                 elif evento.key == pygame.K_LEFT:
                     movimentopersonagem = -3
                     personagem_atual = esquerda_img
+                elif evento.key == pygame.K_SPACE:
+                    pausar_jogo()
             elif evento.type == pygame.KEYUP:
                 if evento.key == pygame.K_RIGHT or evento.key == pygame.K_LEFT:
                     movimentopersonagem = 0
@@ -275,7 +391,9 @@ def jogo():
                     personagem_atual = personagemComendo
                     tela.fill(branco)
                     tela.blit(fundoJogo, (0, 0))
+
                     tela.blit(logoMercadoRed, (0, 0))
+
                     ponto = fonteGiz.render("Pontos", True, branco)
                     tela.blit(ponto, (710, 175))
                     tela.blit(fonteGizMaior.render(str(pontos), True, branco), (740, 200))
@@ -371,7 +489,21 @@ def jogo():
 
         tela.fill(branco)
         tela.blit(fundoJogo, (0, 0))
-        tela.blit(logoMercadoRed, (0, 0))
+
+        escala += velocidade * direcao
+        if escala >= escala_max or escala <= escala_min:
+            direcao *= -1
+
+        nova_largura = int(largura_original * escala)
+        nova_altura = int(altura_original * escala)
+        logo_animada = pygame.transform.scale(logoMercadoRed, (nova_largura, nova_altura))
+
+        x_original = 0  
+        y_original = 0  
+        x_logo = x_original + (largura_original - nova_largura) // 2
+        y_logo = y_original + (altura_original - nova_altura) // 2
+        tela.blit(logo_animada, (x_logo, y_logo))
+
         ponto = fonteGiz.render("Pontos", True, branco)
         tela.blit(ponto, (710, 175))
         tela.blit(fonteGizMaior.render(str(pontos), True, branco), (740, 200))
@@ -396,6 +528,10 @@ def jogo():
 
         for comida in comidas:
             comida.desenhar(tela)
+
+        teclaTexto = fonteBotao.render("Pausar", True, branco)
+        tela.blit(teclaTexto, (855, 65))
+        tela.blit(tecla, (910, 56))
 
         pygame.display.update()
 
