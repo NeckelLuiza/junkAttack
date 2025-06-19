@@ -1,6 +1,7 @@
 import pygame 
-import os
-from recursos.utils import limparTela, aguarde, ouvir ,inicializarBancoDeDados
+import time
+from recursos.utils import aguarde, ouvir
+from recursos.utils import salvar_partida, mostrar_ultimos_logs
 import tkinter as tk
 import random
 from tkinter import messagebox
@@ -24,6 +25,7 @@ logoMercadoRed = pygame.image.load("recursos/logoMercadoRed.png")
 aviao = pygame.image.load("recursos/aviao.png")
 coracao = pygame.image.load("recursos/coracao.png")
 tecla = pygame.image.load("recursos/tecla.png")
+panfleto = pygame.image.load("recursos/panfleto.png")
 #personagem
 personagemInicio= pygame.image.load("recursos/personagemInicio.png")
 personagemMagro = pygame.image.load("recursos/personagem1.png")
@@ -57,8 +59,11 @@ trilhaSonora = pygame.mixer.music.load("recursos/trilhaSonora.mp3")
 pygame.mixer.music.set_volume(0.7) 
 audioPorta = pygame.mixer.Sound("recursos/audioPorta.mp3")
 audioComer = pygame.mixer.Sound("recursos/audioComer.mp3")
+audioComer.set_volume(0.5)
 audioEngordar = pygame.mixer.Sound("recursos/audioEngordar.mp3")  
 audioBotao = pygame.mixer.Sound("recursos/audioBotao.mp3")
+audioPerder = pygame.mixer.Sound("recursos/fail.mp3")
+audioPerder.set_volume(0.3)
 #cores
 branco = (255,255,255)
 preto = (0, 0 ,0 )
@@ -66,6 +71,7 @@ bege= (71,51,34)
 amarelo = (238,177,94) 
 #fontes
 fonteBotaoGrande = pygame.font.Font("recursos/BebasNeue.ttf", 40)
+fonteBotaoM = pygame.font.Font("recursos/BebasNeue.ttf", 30)
 fonteBotao= pygame.font.Font("recursos/BebasNeue.ttf", 20)
 fonteGizPequeno = pygame.font.Font("recursos/giz.otf", 10)
 fonteGiz = pygame.font.Font("recursos/giz.otf", 20)
@@ -177,9 +183,26 @@ def start():
 
                 if quitButton.collidepoint(evento.pos):
                     pygame.mixer.Sound.play(audioBotao)
-                    larguraButtonQuit = 150
+                    larguraButtonQuit = 120
                     alturaButtonQuit  = 50
-                    aguarde(0.2)
+                    tela.fill(branco)
+                    tela.blit(fundoStart, (0,0))
+                    tela.blit(personagemInicio, (500, 200))
+                    tela.blit(logoMercado,(780, 0))
+                    tela.blit(aviao, (posicaoXAviao, posicaoYAviao))
+
+                    startButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonStart // 2, yCentroStart - alturaButtonStart // 2, larguraButtonStart, alturaButtonStart), border_radius=15)
+                    startTexto = fonteBotao.render("Iniciar", True, preto)
+                    rectTexto = startTexto.get_rect(center=startButton.center)
+                    tela.blit(startTexto, rectTexto)
+
+                    quitButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonQuit // 2, yCentroQuit - alturaButtonQuit // 2, larguraButtonQuit, alturaButtonQuit), border_radius=15)
+                    quitTexto = fonteBotao.render("Sair", True, preto)
+                    rectTextoQuit = quitTexto.get_rect(center=quitButton.center)
+                    tela.blit(quitTexto, rectTextoQuit)
+
+                    pygame.display.update()
+                    pygame.time.delay(150)
                     quit()
                         
         tela.fill(branco)
@@ -277,12 +300,46 @@ def jogo():
     invulneravel = False
     tempo_invulneravel = 0
     duracao_invulneravel = 1000
+    tempo_inicio = time.time()
+    tempo_total_pausa = 0
+    tempo_ultimo_panfleto = pygame.time.get_ticks()
+    intervalo_panfleto = random.randint(5000, 10000)
+
+    class Panfleto:
+        def __init__(self):
+            self.imagem = pygame.image.load("recursos/panfleto.png")
+            self.resetar()
+
+        def resetar(self):
+            self.y = random.randint(100, 500)
+            direcao_esquerda = random.choice([True, False])
+                    
+            if direcao_esquerda:
+                self.x = -self.imagem.get_width()  # esquerda
+                self.vx = random.uniform(0.2, 0.5)  # velocidade para a direita
+            else:
+                self.x = 1000  # direita
+                self.vx = -random.uniform(0.2, 0.5)  # velocidade para a esquerda
+
+            self.ativo = True
+
+        def mover(self):
+            if self.ativo:
+                self.x += self.vx
+                if self.x > 1000:  # Saiu da tela
+                    self.ativo = False
+
+        def desenhar(self, superficie):
+            if self.ativo:
+                superficie.blit(self.imagem, (self.x, self.y))
 
     def sortear_comida():
         if random.random() < 0.6:  
             return random.choice(saudaveis)
         else:
             return random.choice(nao_saudaveis)
+
+    panfleto = Panfleto()
 
     class Comida:
         def __init__(self, imagem):
@@ -302,6 +359,8 @@ def jogo():
         def desenhar(self, superficie):
             superficie.blit(self.imagem, (self.x, self.y))
 
+
+
     saudaveis = [banana, laranja, maca, melancia, morango]
     nao_saudaveis = [batataFrita, chocolate, hamburguer, ovos, pizza, refrigerante, sorvete]
     comidas_saudaveis = [Comida(random.choice(saudaveis)) for _ in range(3)]
@@ -316,6 +375,8 @@ def jogo():
     direita_img = magroDireita
 
     def pausar_jogo():
+        nonlocal tempo_total_pausa  
+
         pausado = True
         overlay = pygame.Surface((1000, 700))  
         overlay.set_alpha(180)  
@@ -324,6 +385,8 @@ def jogo():
         texto_pausa = fonteGiz.render("Jogo Pausado - Pressione ESPAÇO para continuar", True, branco)
         rect_texto = texto_pausa.get_rect(center=(500, 350))
 
+        tempo_pausa_inicio = time.time()
+
         while pausado:
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
@@ -331,6 +394,7 @@ def jogo():
                 elif evento.type == pygame.KEYDOWN:
                     if evento.key == pygame.K_SPACE:
                         pausado = False
+
             tela.blit(fundoJogo, (0, 0))
             tela.blit(logoMercadoRed, (0, 0))
             tela.blit(ponto, (710, 175))
@@ -345,6 +409,9 @@ def jogo():
             tela.blit(overlay, (0, 0))
             tela.blit(texto_pausa, rect_texto)
             pygame.display.update()
+
+        tempo_pausa_fim = time.time()
+        tempo_total_pausa += tempo_pausa_fim - tempo_pausa_inicio  
 
     while True:
         tempo_atual = pygame.time.get_ticks()
@@ -376,6 +443,7 @@ def jogo():
             invulneravel = False
 
         for comida in comidas:
+            panfleto.mover()
             comida.atualizar()
 
         for comida in comidas:
@@ -387,7 +455,7 @@ def jogo():
                     comida.y = -random.randint(100, 300)
                     comida.x = random.randint(50, 800)
                     comida.imagem = sortear_comida()
-
+                    panfleto.mover()
                     personagem_atual = personagemComendo
                     tela.fill(branco)
                     tela.blit(fundoJogo, (0, 0))
@@ -405,13 +473,18 @@ def jogo():
                         tela.blit(coracao, (880, 0))
                     for c in comidas:
                         c.desenhar(tela)
+                    panfleto.desenhar(tela)
                     tela.blit(personagem_atual, (posicaoXpersonagem, posicaoYpersonagem))
+                    tela.blit(teclaTexto, (855, 65))
+                    tela.blit(tecla, (910, 56))
+                    panfleto.desenhar(tela)
                     pygame.display.update()
                     pygame.time.delay(100)
                     personagem_atual = personagemFrente
 
                 else:
                     vidas_antes = vidas
+                    audioComer.play()
                     audioEngordar.play()
                     invulneravel = True
                     tempo_invulneravel = tempo_atual
@@ -438,6 +511,9 @@ def jogo():
                         c.desenhar(tela)
 
                     tela.blit(personagem_atual, (posicaoXpersonagem, posicaoYpersonagem))
+                    tela.blit(teclaTexto, (855, 65))
+                    tela.blit(tecla, (910, 56))
+                    panfleto.desenhar(tela)
                     pygame.display.update()
                     pygame.time.delay(150)
                     personagem_atual = personagemFrente
@@ -464,8 +540,14 @@ def jogo():
                         tela.blit(fonteGiz.render("Pontos", True, branco), (710, 175))
                         tela.blit(fonteGizMaior.render(str(pontos), True, branco), (740, 200))
                         tela.blit(personagemFinal, (posicaoXpersonagem, posicaoYpersonagem))
+                        pygame.mixer.Sound.play(audioPerder)
                         pygame.display.update()
                         pygame.time.delay(3000)
+        
+                        tempo_final = time.time()
+                        duracao = tempo_final - tempo_inicio - tempo_total_pausa
+                        duracao_formatada = time.strftime("%H:%M:%S", time.gmtime(duracao))
+                        salvar_partida(nome, pontos, duracao_formatada)
                         dead()
                         return
 
@@ -528,6 +610,17 @@ def jogo():
 
         for comida in comidas:
             comida.desenhar(tela)
+        
+        if not panfleto.ativo:
+            tempo_agora = pygame.time.get_ticks()
+            if tempo_agora - tempo_ultimo_panfleto >= intervalo_panfleto:
+                panfleto.resetar()
+                tempo_ultimo_panfleto = tempo_agora
+                intervalo_panfleto = random.randint(30000, 500000)
+
+        panfleto.mover()
+        panfleto.desenhar(tela)
+
 
         teclaTexto = fonteBotao.render("Pausar", True, branco)
         tela.blit(teclaTexto, (855, 65))
@@ -540,9 +633,9 @@ def dead():
     alturaButtonStart  = 50
     larguraButtonQuit = 150
     alturaButtonQuit  = 50
-    xCentro = 175 + 150 // 2  
-    yCentroStart = 335 + 50 // 2
-    yCentroQuit = 400 + 50 // 2
+    xCentroStart = 240 + 250 // 2  
+    xCentroQuit = 685 + 250 // 2
+    yCentro = 600 + 50 // 2
 
     while True:
         for evento in pygame.event.get():
@@ -575,12 +668,14 @@ def dead():
         tela.blit(placar, (60,-15))
         tela.blit(personagemFinal, (-30, 300))
 
-        startButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonStart // 2,yCentroStart - alturaButtonStart // 2, larguraButtonStart, alturaButtonStart), border_radius=15)
+        mostrar_ultimos_logs(tela)
+
+        startButton = pygame.draw.rect(tela, amarelo, (xCentroStart - larguraButtonStart // 2,yCentro - alturaButtonStart // 2, larguraButtonStart, alturaButtonStart), border_radius=15)
         startTexto = fonteBotao.render("Jogar novamente", True, preto)
         rectTexto = startTexto.get_rect(center=startButton.center)
         tela.blit(startTexto, rectTexto)
         
-        quitButton = pygame.draw.rect(tela, amarelo, (xCentro - larguraButtonQuit // 2,  yCentroQuit - alturaButtonQuit // 2, larguraButtonQuit, alturaButtonQuit), border_radius=15)
+        quitButton = pygame.draw.rect(tela, amarelo, (xCentroQuit - larguraButtonQuit // 2,  yCentro - alturaButtonQuit // 2, larguraButtonQuit, alturaButtonQuit), border_radius=15)
         quitTexto = fonteBotao.render("Sair", True, preto)
         rectTextoQuit = quitTexto.get_rect(center=quitButton.center)
         tela.blit(quitTexto, rectTextoQuit)
