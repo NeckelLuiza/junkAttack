@@ -5,8 +5,8 @@
 **RA:** 1137716
 
 ## Testador do jogo
-**Nome:** 
-**RA:** 
+**Nome:** Vinicius Hoffelder Colussi
+**RA:** 137833
 
 ## 🎮 Sobre o jogo
 **Junk Attack** é um jogo desenvolvido como parte do curso de Ciência da Computação, com o objetivo de testar e aplicar, de forma lúdica, os conhecimentos adquiridos em Python durante a disciplina. No jogo, o personagem precisa comer apenas comidas saudáveis que caem do céu. A cada alimento saudável ingerido, ele ganha pontos. Já ao comer alimentos não saudáveis, ele perde uma vida e vai ganhando peso — visualmente refletido no personagem. O jogador começa com 3 vidas e precisa acumular a maior pontuação possível antes que acabem.
